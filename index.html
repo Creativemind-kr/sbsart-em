@@ -1,327 +1,216 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>코리아교육그룹 채용공고 편집기</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <style>
-    /* ── 전체 레이아웃 ── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #e0e0e0; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 14px; padding-bottom: 80px; }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>코리아교육그룹 채용공고</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+/* ── 리셋 ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #ccc; font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; font-size: 14px; padding-bottom: 70px; }
 
-    /* ── 툴바 ── */
-    .rc-tool {
-      background: #333; color: #fff; font-size: 12px; text-align: center;
-      padding: 8px 12px; line-height: 1.5;
-    }
+/* ── 캡처 영역 ── */
+.rc-pub { width: 860px; margin: 0 auto; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.35); }
 
-    /* ── 캡처 영역 ── */
-    #rcCapture {
-      width: 860px; margin: 0 auto; background: #fff;
-      box-shadow: 0 4px 20px rgba(0,0,0,.3);
-    }
+/* ── 툴 안내 ── */
+.rc-tool { background: #222; color: #fff; font-size: 12px; text-align: center; padding: 8px; line-height: 1.6; }
 
-    /* ── 이미지 래퍼 ── */
-    .rc-img-wrap { position: relative; line-height: 0; }
-    .rc-img-wrap img.recruit-img { width: 100%; display: block; }
-    .rc-img-wrap .rc-edit-area { position: absolute; top: 8px; left: 8px; z-index: 10; }
-    .chk-false { display: none; }
+/* ══════════════════════════════════════
+   편집 영역 — input/textarea 자체가 편집 필드
+   label은 캡처 시에만 표시
+══════════════════════════════════════ */
+.rc-edit-area { display: inline-block; position: relative; width: 100%; }
+.rc-edit-area label { display: none; white-space: pre-wrap; line-height: 1.6; }
 
-    /* ── 편집 영역 공통 ── */
-    .rc-edit-area { position: relative; display: inline-block; }
-    .rc-edit-area label {
-      display: block; cursor: text; min-width: 40px; min-height: 1em;
-      white-space: pre-wrap; word-break: break-all;
-    }
-    .rc-edit-area input[type="text"],
-    .rc-edit-area textarea {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      border: 1px dashed #aaa; background: rgba(255,255,255,.85);
-      font-family: inherit; font-size: inherit; color: inherit;
-      font-weight: inherit; text-align: inherit; resize: none;
-      padding: 2px 4px; z-index: 5; line-height: 1.5;
-    }
-    .rc-edit-area input[type="text"]:focus,
-    .rc-edit-area textarea:focus { outline: 2px solid #2196f3; border-color: transparent; }
+.rc-edit-area input[type="text"],
+.rc-edit-area textarea {
+  display: block; width: 100%;
+  border: 1px dashed transparent;
+  background: transparent;
+  font-family: inherit; font-size: inherit; font-weight: inherit;
+  color: inherit; text-align: inherit; letter-spacing: inherit;
+  line-height: 1.6; padding: 1px 3px;
+  resize: none; outline: none; overflow: hidden;
+}
+.rc-edit-area:hover input[type="text"],
+.rc-edit-area:hover textarea { border-color: rgba(0,0,0,.3); background: rgba(255,255,255,.45); }
+.rc-edit-area input[type="text"]:focus,
+.rc-edit-area textarea:focus { border-color: #2196f3 !important; background: rgba(255,255,255,.95) !important; color: #111 !important; }
 
-    /* 캡처 모드: 편집요소 숨김 */
-    .rc-cap-ok .swap { display: none !important; }
-    .rc-cap-ok .rc-edit-area input[type="text"],
-    .rc-cap-ok .rc-edit-area textarea { display: none !important; }
-    .rc-cap-ok .rc-tool,
-    .rc-cap-ok .add_button,
-    .rc-cap-ok .delete_button { display: none !important; }
+/* 캡처 모드 */
+.rc-cap-ok .rc-edit-area label       { display: block !important; }
+.rc-cap-ok .rc-edit-area input[type="text"],
+.rc-cap-ok .rc-edit-area textarea    { display: none !important; }
+.rc-cap-ok .rc-tool,
+.rc-cap-ok .add_button,
+.rc-cap-ok .delete_button,
+.rc-cap-ok .img-chk-wrap             { display: none !important; }
+.chk-false                            { display: none !important; }
 
-    /* ── 헤더 ── */
-    .rc-head {
-      background: #fff; text-align: center;
-      padding: 28px 20px 22px; border-bottom: 3px solid #1a2a5e;
-    }
-    .rc-head .logo-line {
-      color: #c00; font-size: 12px; font-weight: 700;
-      letter-spacing: 3px; margin-bottom: 8px;
-    }
-    .rc-head h2 { margin: 4px 0; }
-    .rc-head h2:nth-child(2) { font-size: 24px; font-weight: 900; color: #111; }
-    .rc-head h2:nth-child(3) { font-size: 22px; font-weight: 900; color: #c00; }
-    .rc-head h2:nth-child(4) { font-size: 18px; font-weight: 700; color: #333; margin-top: 6px; }
-    .rc-head h2 .rc-edit-area { display: block; }
-    .rc-head h2 .rc-edit-area input[type="text"] { font-size: inherit; font-weight: inherit; color: inherit; text-align: center; }
+/* ── 이미지 래퍼 ── */
+.rc-img-wrap { position: relative; line-height: 0; }
+.rc-img-wrap img.recruit-img { width: 100%; display: block; }
+.img-chk-wrap {
+  position: absolute; top: 6px; left: 8px; z-index: 10;
+  background: rgba(0,0,0,.55); border-radius: 3px; padding: 3px 8px;
+}
+.img-chk-wrap label { color: #fff; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
 
-    /* ── 섹션 타이틀 ── */
-    .rc-table-tit {
-      display: flex; justify-content: space-between; align-items: center;
-      background: #1a2a5e; color: #fff;
-      padding: 9px 14px; font-size: 14px; font-weight: 700; margin-top: 20px;
-    }
-    .rc-table-tit:first-child { margin-top: 0; }
-    .rc-table-tit .rc-edit-area label,
-    .rc-table-tit .rc-edit-area input[type="text"] { color: #fff; }
-    .rc-table-tit .right-wrap { font-size: 13px; font-weight: 400; display: flex; align-items: center; gap: 6px; }
-    .rc-table-tit .right-wrap .rc-edit-area input[type="text"] { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.4); }
+/* ── 헤더 ── */
+.rc-head { background: #fff; text-align: center; padding: 30px 20px 24px; border-bottom: 3px solid #1a2a5e; }
+.rc-head h2 { margin: 3px 0; }
+.rc-head h2:nth-of-type(1) { font-size: 26px; font-weight: 900; color: #111; }
+.rc-head h2:nth-of-type(2) { font-size: 22px; font-weight: 900; color: #24dcf6; }
+.rc-head h2:nth-of-type(3) { font-size: 18px; font-weight: 700; color: #00507f; margin-top: 6px; }
+.rc-head h2 .rc-edit-area { display: block; }
+.rc-head h2 .rc-edit-area input[type="text"] { text-align: center; }
 
-    /* ── 테이블 공통 ── */
-    .rc-table-wrap { padding: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 13px; }
-    th { background: #1a2a5e; color: #fff; text-align: center; padding: 9px 8px; border: 1px solid #2a3a7e; }
-    td { padding: 9px 10px; border: 1px solid #ccc; vertical-align: top; }
-    td:first-child { text-align: center; font-weight: 700; background: #f4f7ff; }
-    .rc-table-lg { width: 35%; }
-    .rc-table-point td .rc-edit-area,
-    .rc-table-cdt  td .rc-edit-area { display: block; width: 100%; }
-    .rc-table-point td .rc-edit-area label,
-    .rc-table-cdt  td .rc-edit-area label { white-space: pre-wrap; line-height: 1.6; }
-    .rc-table-point td .rc-edit-area textarea,
-    .rc-table-cdt  td .rc-edit-area textarea { min-height: 48px; }
+/* ── 섹션 타이틀 ── */
+.rc-table-tit {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #1a2a5e; color: #fff;
+  padding: 9px 14px; font-size: 14px; font-weight: 700;
+}
+.rc-table-tit .left-wrap .rc-edit-area input { color: #fff; font-weight: 700; font-size: 14px; }
+.rc-table-tit .right-wrap { font-size: 13px; font-weight: 400; display: flex; align-items: center; gap: 6px; }
+.rc-table-tit .right-wrap .rc-edit-area input { color: #fff; font-size: 13px; width: 80px; }
 
-    /* ── 행 추가/삭제 버튼 ── */
-    .add_button, .delete_button {
-      padding: 5px 14px; margin: 4px 4px 12px 0;
-      border: none; border-radius: 4px; cursor: pointer; font-size: 12px;
-    }
-    .add_button    { background: #1a2a5e; color: #fff; }
-    .delete_button { background: #c00; color: #fff; }
+/* ── 테이블 ── */
+.rc-table-wrap { padding: 16px 20px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 6px; }
+th { background: #1a2a5e; color: #fff; text-align: center; padding: 9px 8px; border: 1px solid #2a3a8e; }
+th .rc-edit-area input { color: #fff; text-align: center; font-weight: 700; }
+td { padding: 8px 10px; border: 1px solid #ccc; vertical-align: top; }
+td:first-child { text-align: center; font-weight: 700; background: #f4f7ff; width: 110px; }
+.rc-table-lg { width: 34%; }
+td .rc-edit-area textarea { min-height: 40px; }
 
-    /* ── 정보 섹션 ── */
-    .rc-info-wrap { background: #f7f8fc; padding: 20px; border-top: 4px solid #1a2a5e; }
-    .rc-info dl { display: flex; align-items: flex-start; border-bottom: 1px solid #ddd; padding: 9px 0; gap: 16px; }
-    .rc-info dl:last-child { border-bottom: none; }
-    .rc-info dt { min-width: 80px; font-weight: 700; color: #1a2a5e; font-size: 13px; flex-shrink: 0; }
-    .rc-info dd { flex: 1; font-size: 13px; color: #333; }
-    .rc-info .rc-edit-area { display: block; width: 100%; }
-    .rc-info .rc-edit-area label { display: block; line-height: 1.6; }
-    .rc-info .rc-edit-area input[type="text"] { font-size: 13px; color: #333; }
-    .rc-info dt .rc-edit-area input[type="text"] { font-weight: 700; color: #1a2a5e; }
+/* ── 행 추가/삭제 버튼 ── */
+.add_button, .delete_button {
+  padding: 5px 13px; margin: 4px 4px 10px 0;
+  border: none; border-radius: 3px; cursor: pointer; font-size: 12px; font-family: inherit;
+}
+.add_button    { background: #1a2a5e; color: #fff; }
+.delete_button { background: #c00; color: #fff; }
 
-    /* ── 인재상 섹션 ── */
-    .rc-talent-section { background: #1a2a5e; padding: 32px 20px; text-align: center; }
-    .rc-talent-title { color: #f5d87a; font-size: 18px; font-weight: 900; margin-bottom: 6px; }
-    .rc-talent-sub   { color: #ccc; font-size: 13px; margin-bottom: 24px; }
-    .rc-talent-cards { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
-    .rc-talent-card  { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2); border-radius: 8px; padding: 16px 12px; width: 130px; }
-    .rc-talent-card .icon  { font-size: 26px; margin-bottom: 6px; }
-    .rc-talent-card .clabel { color: #f5d87a; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
-    .rc-talent-card p { color: #ccc; font-size: 11px; line-height: 1.5; }
-    .rc-talent-section .rc-edit-area label { color: inherit; }
-    .rc-talent-section .rc-edit-area input[type="text"] { background: rgba(255,255,255,.1); color: inherit; border-color: rgba(255,255,255,.3); }
+/* ── 지원 정보 ── */
+.rc-info-wrap { background: #f7f8fc; padding: 20px; border-top: 4px solid #1a2a5e; }
+.rc-info dl { display: flex; align-items: flex-start; border-bottom: 1px solid #ddd; padding: 8px 0; gap: 16px; }
+.rc-info dl:last-child { border-bottom: none; }
+.rc-info dt { min-width: 72px; font-weight: 700; color: #1a2a5e; font-size: 13px; flex-shrink: 0; padding-top: 2px; }
+.rc-info dd { flex: 1; font-size: 13px; color: #333; }
+.rc-info dt .rc-edit-area input { font-weight: 700; color: #1a2a5e; font-size: 13px; }
+.rc-info dd .rc-edit-area input { color: #333; font-size: 13px; }
 
-    /* ── 갤러리 섹션 ── */
-    .rc-gallery-section { background: #111; padding: 32px 20px; }
-    .rc-gallery-top  { color: #fff; font-size: 15px; font-weight: 900; text-align: center; margin-bottom: 4px; }
-    .rc-gallery-main { color: #f5d87a; font-size: 20px; font-weight: 900; text-align: center; margin-bottom: 20px; }
-    .rc-gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .rc-gallery-item { background: #2a2a2a; aspect-ratio: 4/3; border-radius: 4px; overflow: hidden; position: relative; }
-    .rc-gallery-item img { width: 100%; height: 100%; object-fit: cover; }
-    .rc-gallery-item .placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#555; font-size:12px; }
-    .rc-gallery-caption { color: #888; font-size: 11px; text-align: center; margin-top: 8px; }
-
-    /* ── FIRST BRAND AWARDS ── */
-    .rc-fba-section { background: #0a0a0a; padding: 40px 20px; text-align: center; }
-    .rc-fba-badge { color: #f5d87a; font-size: 11px; letter-spacing: 4px; margin-bottom: 8px; }
-    .rc-fba-title { font-size: 52px; font-weight: 900; color: #fff; line-height: 1.0; letter-spacing: -2px; }
-    .rc-fba-title .hl { color: #f5d87a; }
-    .rc-fba-sub { color: #aaa; font-size: 12px; margin-top: 10px; letter-spacing: 2px; }
-
-    /* ── 연혁 섹션 ── */
-    .rc-history-section { padding: 32px 20px; }
-    .rc-history-badge { text-align: center; font-size: 13px; color: #c00; font-weight: 700; letter-spacing: 2px; margin-bottom: 4px; }
-    .rc-history-main  { text-align: center; font-size: 20px; font-weight: 900; color: #1a2a5e; margin-bottom: 20px; }
-    .rc-history-list  { list-style: none; }
-    .rc-history-list li { display: flex; gap: 16px; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
-    .rc-history-list .year { color: #1a2a5e; font-weight: 700; min-width: 70px; }
-    .rc-history-list .desc { color: #444; line-height: 1.5; }
-
-    /* ── 하단 버튼 ── */
-    #fixed-btns {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      display: flex; justify-content: center; gap: 12px;
-      padding: 12px; background: rgba(0,0,0,.7); z-index: 100;
-    }
-    .btn_download {
-      background: #f5d87a; color: #1a2a5e; font-weight: 900;
-      font-size: 15px; padding: 12px 40px; border: none; border-radius: 6px; cursor: pointer;
-    }
-    .btn_download:hover { background: #e5c85a; }
-    .btn_refresh {
-      background: #555; color: #fff; font-size: 14px;
-      padding: 12px 28px; border: none; border-radius: 6px; cursor: pointer;
-    }
-    .btn_refresh:hover { background: #333; }
-
-    /* 갤러리 이미지 업로드 버튼 */
-    .gallery-upload-btn {
-      position: absolute; bottom: 4px; right: 4px;
-      background: rgba(0,0,0,.6); color: #fff; font-size: 10px;
-      padding: 3px 7px; border-radius: 3px; cursor: pointer; z-index: 10;
-    }
-    .gallery-upload-btn input[type="file"] { display: none; }
-    .rc-cap-ok .gallery-upload-btn { display: none; }
-  </style>
+/* ── 하단 고정 버튼 ── */
+#fixed-btns {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: flex; justify-content: center; gap: 12px;
+  padding: 11px 16px; background: rgba(0,0,0,.75); z-index: 999;
+}
+.btn_download {
+  background: #f5d87a; color: #1a2a5e; font-weight: 900; font-size: 15px;
+  padding: 10px 36px; border: none; border-radius: 5px; cursor: pointer; font-family: inherit;
+}
+.btn_download:hover { background: #e5c85a; }
+.btn_refresh {
+  background: #555; color: #fff; font-size: 14px;
+  padding: 10px 24px; border: none; border-radius: 5px; cursor: pointer; font-family: inherit;
+}
+.btn_refresh:hover { background: #333; }
+</style>
 </head>
 <body>
-
-<section id="capture_area">
 <div class="rc-pub" id="rcCapture">
 
-  <!-- 툴 안내 -->
-  <div class="rc-tool">텍스트를 직접 클릭하여 편집하세요. 이미지 체크 해제 시 저장에서 제외됩니다.</div>
+  <div class="rc-tool">텍스트를 클릭하면 바로 편집됩니다 &nbsp;|&nbsp; 이미지 체크 해제 시 저장에서 제외됩니다</div>
 
-  <!-- ── 헤더 ── -->
+  <!-- 로고 이미지 -->
+  <div class="rc-img-wrap">
+    <div class="img-chk-wrap"><label><input type="checkbox" name="imgChk" checked> 로고</label></div>
+    <img class="recruit-img" src="/application/recruit/img/keg-recruit-top.jpg" alt="" onerror="this.style.display='none'">
+  </div>
+
+  <!-- 헤더 텍스트 -->
   <div class="rc-head">
-    <div class="logo-line">KOREA EDUCATION GROUP</div>
     <h2>
       <span class="rc-edit-area">
-        <label for="rc-head01">코리아교육그룹</label>
-        <input type="text" id="rc-head01" value="코리아교육그룹">
+        <label>코리아교육그룹</label>
+        <input type="text" value="코리아교육그룹">
       </span>
     </h2>
     <h2>
       <span class="rc-edit-area">
-        <label for="rc-head02">SBS아카데미컴퓨터아트학원</label>
-        <input type="text" id="rc-head02" value="SBS아카데미컴퓨터아트학원">
+        <label>SBS아카데미컴퓨터아트학원</label>
+        <input type="text" value="SBS아카데미컴퓨터아트학원">
       </span>
     </h2>
     <h2>
       <span class="rc-edit-area">
-        <label for="rc-head03">천안점 각 분야 강사 추가 채용</label>
-        <input type="text" id="rc-head03" value="천안점 각 분야 강사 추가 채용">
+        <label>천안점 각 분야 강사 추가 채용</label>
+        <input type="text" value="천안점 각 분야 강사 추가 채용">
       </span>
     </h2>
   </div>
 
-  <!-- ── 상단 이미지 (로고/배너) ── -->
+  <!-- 상단 소개 이미지 -->
   <div class="rc-img-wrap">
-    <span class="rc-edit-area swap">
-      <input type="checkbox" name="imgChk" checked>
-    </span>
-    <img class="recruit-img" src="/application/recruit/img/keg-recruit-intro001.jpg"
-      alt="상단 배너"
-      onerror="this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='flex')"
-    >
-    <!-- 이미지 없을 때 대체 배너 -->
-    <div style="background:linear-gradient(135deg,#1a2a5e,#0a1a3e);padding:40px 20px;text-align:center;display:none;">
-      <div style="color:#f5d87a;font-size:28px;font-weight:900;letter-spacing:-1px;">코리아교육그룹</div>
-      <div style="color:#fff;font-size:14px;margin-top:8px;opacity:.8;">함께 성장하는 교육의 힘</div>
-    </div>
+    <div class="img-chk-wrap"><label><input type="checkbox" name="imgChk" checked> 소개 이미지</label></div>
+    <img class="recruit-img" src="/application/recruit/img/keg-recruit-intro001.jpg" alt="" onerror="this.style.display='none'">
   </div>
 
-  <!-- ── 복리후생 이미지 ── -->
+  <!-- 복리후생 이미지 -->
   <div class="rc-img-wrap">
-    <span class="rc-edit-area swap">
-      <input type="checkbox" name="imgChk" checked>
-    </span>
-    <img class="recruit-img" src="/application/recruit/img/keg-recruit-benefit.jpg" alt="복리후생"
-      onerror="this.parentElement.style.display='none'">
+    <div class="img-chk-wrap"><label><input type="checkbox" name="imgChk" checked> 복리후생</label></div>
+    <img class="recruit-img" src="/application/recruit/img/keg-recruit-benefit.jpg" alt="" onerror="this.style.display='none'">
   </div>
 
-  <!-- ── 모집요강 테이블 ── -->
+  <!-- 모집요강 -->
   <div class="rc-table-wrap">
     <h3 class="rc-table-tit">
-      <div class="left-wrap">[ 모집요강 ]</div>
+      <div class="left-wrap">
+        <span class="rc-edit-area"><label>[ 모집요강 ]</label><input type="text" value="[ 모집요강 ]"></span>
+      </div>
       <div class="right-wrap">
-        근무지역 :
-        <span class="rc-edit-area">
-          <label for="rc-loc">천안</label>
-          <input type="text" id="rc-loc" value="천안">
-        </span>
+        근무지역 :&nbsp;
+        <span class="rc-edit-area"><label>천안</label><input type="text" value="천안"></span>
       </div>
     </h3>
-
-    <table class="rc-table-point tableType2">
-      <colgroup><col><col class="rc-table-lg"><col class="rc-table-lg"></colgroup>
+    <table class="tableType2">
+      <colgroup><col style="width:110px"><col class="rc-table-lg"><col class="rc-table-lg"></colgroup>
       <thead>
         <tr>
-          <th><span class="rc-edit-area"><label for="rc-tb01-th01">모집분야</label><input type="text" id="rc-tb01-th01" value="모집분야"></span></th>
-          <th><span class="rc-edit-area"><label for="rc-tb01-th02">주요업무</label><input type="text" id="rc-tb01-th02" value="주요업무"></span></th>
-          <th><span class="rc-edit-area"><label for="rc-tb01-th03">응시자격</label><input type="text" id="rc-tb01-th03" value="응시자격"></span></th>
+          <th><span class="rc-edit-area"><label>모집분야</label><input type="text" value="모집분야"></span></th>
+          <th><span class="rc-edit-area"><label>주요업무</label><input type="text" value="주요업무"></span></th>
+          <th><span class="rc-edit-area"><label>응시자격</label><input type="text" value="응시자격"></span></th>
         </tr>
       </thead>
       <tbody class="tableBodyType2">
         <tr>
-          <td><span class="rc-edit-area"><label>웹디자인\n분야</label><textarea rows="2">웹디자인
-분야</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- 웹디자인 과정 강의 (HTML, CSS, JS, 반응형 웹)
-- Adobe XD, Figma 활용 UI 디자인 강의
-- 포트폴리오 제작 지도</label><textarea rows="3">- 웹디자인 과정 강의 (HTML, CSS, JS, 반응형 웹)
-- Adobe XD, Figma 활용 UI 디자인 강의
-- 포트폴리오 제작 지도</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- 관련 분야 실무 경력 2년 이상
-- 관련 자격증 보유자 우대
-- 강의 경험자 우대</label><textarea rows="3">- 관련 분야 실무 경력 2년 이상
-- 관련 자격증 보유자 우대
-- 강의 경험자 우대</textarea></span></td>
-        </tr>
-        <tr>
-          <td><span class="rc-edit-area"><label>영상·편집
-분야</label><textarea rows="2">영상·편집
-분야</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- 영상 편집 과정 강의 (Premiere Pro, After Effects)
-- 유튜브·SNS 콘텐츠 제작 강의
-- 모션그래픽·영상효과 강의</label><textarea rows="3">- 영상 편집 과정 강의 (Premiere Pro, After Effects)
-- 유튜브·SNS 콘텐츠 제작 강의
-- 모션그래픽·영상효과 강의</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- 영상 편집·제작 실무 경력 2년 이상
-- 방송·콘텐츠 제작 경험자 우대</label><textarea rows="2">- 영상 편집·제작 실무 경력 2년 이상
-- 방송·콘텐츠 제작 경험자 우대</textarea></span></td>
-        </tr>
-        <tr>
-          <td><span class="rc-edit-area"><label>건축·인테리어
-분야</label><textarea rows="2">건축·인테리어
-분야</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- AutoCAD, SketchUp, 3ds Max, Revit 강의
-- 실내건축·인테리어 설계 강의
-- BIM 기반 설계 과정 운영</label><textarea rows="3">- AutoCAD, SketchUp, 3ds Max, Revit 강의
-- 실내건축·인테리어 설계 강의
-- BIM 기반 설계 과정 운영</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- 건축·인테리어 관련 실무 경력 2년 이상
-- 건축사·실내건축기사 자격 보유자 우대</label><textarea rows="2">- 건축·인테리어 관련 실무 경력 2년 이상
-- 건축사·실내건축기사 자격 보유자 우대</textarea></span></td>
-        </tr>
-        <tr>
-          <td><span class="rc-edit-area"><label>UI/UX
-분야</label><textarea rows="2">UI/UX
-분야</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- UX 리서치·사용자 분석 강의
-- Figma·Adobe XD 기반 프로토타이핑 강의
-- 앱·웹 서비스 기획 및 디자인 시스템 강의</label><textarea rows="3">- UX 리서치·사용자 분석 강의
-- Figma·Adobe XD 기반 프로토타이핑 강의
-- 앱·웹 서비스 기획 및 디자인 시스템 강의</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- UI/UX 디자인 실무 경력 2년 이상
-- IT 서비스 기업 재직 경험자 우대</label><textarea rows="2">- UI/UX 디자인 실무 경력 2년 이상
-- IT 서비스 기업 재직 경험자 우대</textarea></span></td>
+          <td><span class="rc-edit-area"><label>교육부</label><textarea rows="1">교육부</textarea></span></td>
+          <td><span class="rc-edit-area"><label>- 모션그래픽학과 (평일오전)
+(Premiere Pro, After Effect)</label><textarea rows="2">- 모션그래픽학과 (평일오전)
+(Premiere Pro, After Effect)</textarea></span></td>
+          <td><span class="rc-edit-area"><label>- 적극적이고 밝은 성격의 소유자
+- 강의에 대한 책임감이 강하신 분
+- 성실성, 꼼꼼함, 원만한 대인관계</label><textarea rows="3">- 적극적이고 밝은 성격의 소유자
+- 강의에 대한 책임감이 강하신 분
+- 성실성, 꼼꼼함, 원만한 대인관계</textarea></span></td>
         </tr>
       </tbody>
     </table>
-    <button class="add_button" data-table-type="2" data-cell-count="3">+ 행 추가 (3칸)</button>
-    <button class="delete_button" onclick="deleteLastRow('2')">마지막 행 삭제</button>
+    <button class="add_button" data-type="2" data-cols="3">+ 행 추가</button>
+    <button class="delete_button" onclick="deleteRow('2')">마지막 행 삭제</button>
 
-    <!-- ── 근무조건 테이블 ── -->
-    <h3 class="rc-table-tit" style="margin-top:24px;">
-      <div class="left-wrap">[ 근무조건 ]</div>
+    <!-- 근무조건 -->
+    <h3 class="rc-table-tit" style="margin-top:16px;">
+      <div class="left-wrap">
+        <span class="rc-edit-area"><label>[ 근무조건 ]</label><input type="text" value="[ 근무조건 ]"></span>
+      </div>
     </h3>
-    <table class="rc-table-cdt tableType1">
-      <colgroup><col style="width:120px"><col></colgroup>
+    <table class="tableType1">
+      <colgroup><col style="width:110px"><col></colgroup>
       <thead>
         <tr>
           <th><span class="rc-edit-area"><label>모집분야</label><input type="text" value="모집분야"></span></th>
@@ -330,30 +219,35 @@
       </thead>
       <tbody class="tableBodyType1">
         <tr>
-          <td><span class="rc-edit-area"><label>웹디자인 분야</label><textarea rows="1">웹디자인 분야</textarea></span></td>
-          <td><span class="rc-edit-area"><label>- 근무요일 : 면접 후 협의 (평일)
+          <td><span class="rc-edit-area"><label>교육부</label><textarea rows="1">교육부</textarea></span></td>
+          <td><span class="rc-edit-area"><label>- 근무요일 : 면접 후 협의 (평일 오전)
 - 근무시간 : 면접 후 협의
 - 급여조건 : 면접 후 협의
 - 근무장소 : SBS아카데미컴퓨터아트학원 천안점
-※ 천안점 : 충청남도 천안시 서북구 (면접 후 안내)</label><textarea rows="5">- 근무요일 : 면접 후 협의 (평일)
+※ 천안점 : 충청남도 천안시 서북구 (면접 후 상세 안내)</label><textarea rows="5">- 근무요일 : 면접 후 협의 (평일 오전)
 - 근무시간 : 면접 후 협의
 - 급여조건 : 면접 후 협의
 - 근무장소 : SBS아카데미컴퓨터아트학원 천안점
-※ 천안점 : 충청남도 천안시 서북구 (면접 후 안내)</textarea></span></td>
+※ 천안점 : 충청남도 천안시 서북구 (면접 후 상세 안내)</textarea></span></td>
         </tr>
       </tbody>
     </table>
-    <button class="add_button" data-table-type="1" data-cell-count="2">+ 행 추가 (2칸)</button>
-    <button class="delete_button" onclick="deleteLastRow('1')">마지막 행 삭제</button>
+    <button class="add_button" data-type="1" data-cols="2">+ 행 추가</button>
+    <button class="delete_button" onclick="deleteRow('1')">마지막 행 삭제</button>
   </div>
 
-  <!-- ── 구분선 이미지 ── -->
+  <!-- 직무 프로세스 이미지 -->
   <div class="rc-img-wrap">
-    <img class="recruit-img" src="/application/recruit/img/keg-recruit-line.jpg" alt=""
-      onerror="this.style.display='none'">
+    <div class="img-chk-wrap"><label><input type="checkbox" name="imgChk" checked> 직무 프로세스</label></div>
+    <img class="recruit-img" src="/application/recruit/img/keg-recruit-mentor-process02.jpg" alt="" onerror="this.style.display='none'">
   </div>
 
-  <!-- ── 지원 정보 ── -->
+  <!-- 구분선 이미지 -->
+  <div class="rc-img-wrap">
+    <img class="recruit-img" src="/application/recruit/img/keg-recruit-line.jpg" alt="" onerror="this.style.display='none'">
+  </div>
+
+  <!-- 지원 정보 -->
   <div class="rc-info-wrap">
     <div class="rc-info">
       <dl>
@@ -366,11 +260,11 @@
       </dl>
       <dl>
         <dt><span class="rc-edit-area"><label>지원서류</label><input type="text" value="지원서류"></span></dt>
-        <dd><span class="rc-edit-area"><label>이력서 (사진첨부 필수) / 자기소개서 / 포트폴리오 (해당자)</label><input type="text" value="이력서 (사진첨부 필수) / 자기소개서 / 포트폴리오 (해당자)"></span></dd>
+        <dd><span class="rc-edit-area"><label>이력서 (사진첨부 필수) / 자기소개서</label><input type="text" value="이력서 (사진첨부 필수) / 자기소개서"></span></dd>
       </dl>
       <dl>
         <dt><span class="rc-edit-area"><label>접수방법</label><input type="text" value="접수방법"></span></dt>
-        <dd><span class="rc-edit-area"><label>이메일 접수 (sbs_cheonan@korea-edu.co.kr)</label><input type="text" value="이메일 접수 (sbs_cheonan@korea-edu.co.kr)"></span></dd>
+        <dd><span class="rc-edit-area"><label>온라인접수 (해당 채용공고를 통한 접수)</label><input type="text" value="온라인접수 (해당 채용공고를 통한 접수)"></span></dd>
       </dl>
       <dl>
         <dt><span class="rc-edit-area"><label>제출서류</label><input type="text" value="제출서류"></span></dt>
@@ -383,190 +277,100 @@
     </div>
   </div>
 
-  <!-- ── 인재상 ── -->
-  <div class="rc-talent-section">
-    <div class="rc-talent-title">
-      <span class="rc-edit-area"><label>코리아교육그룹의 인재상</label><input type="text" value="코리아교육그룹의 인재상"></span>
-    </div>
-    <div class="rc-talent-sub">
-      <span class="rc-edit-area"><label>코리아교육그룹이 추구하는 핵심가치와 함께 성장할 인재를 모십니다</label><input type="text" value="코리아교육그룹이 추구하는 핵심가치와 함께 성장할 인재를 모십니다"></span>
-    </div>
-    <div class="rc-talent-cards">
-      <div class="rc-talent-card"><div class="icon">💡</div><div class="clabel">창의성</div><p>새로운 아이디어로<br>교육을 혁신하는 인재</p></div>
-      <div class="rc-talent-card"><div class="icon">🤝</div><div class="clabel">협력</div><p>동료와 함께<br>시너지를 만드는 인재</p></div>
-      <div class="rc-talent-card"><div class="icon">🎯</div><div class="clabel">전문성</div><p>해당 분야 깊은<br>전문지식을 갖춘 인재</p></div>
-      <div class="rc-talent-card"><div class="icon">🌱</div><div class="clabel">성장</div><p>끊임없이 배우고<br>발전하는 인재</p></div>
-      <div class="rc-talent-card"><div class="icon">❤️</div><div class="clabel">열정</div><p>교육에 대한<br>진심과 열정을 가진 인재</p></div>
-    </div>
-  </div>
-
-  <!-- ── 갤러리 ── -->
-  <div class="rc-gallery-section">
-    <div class="rc-gallery-top">
-      <span class="rc-edit-area"><label style="color:#fff;">미래를 만들어가는 곳의 기업</label><input type="text" value="미래를 만들어가는 곳의 기업" style="color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);"></span>
-    </div>
-    <div class="rc-gallery-main">
-      <span class="rc-edit-area"><label style="color:#f5d87a;">코리아교육그룹</label><input type="text" value="코리아교육그룹" style="color:#f5d87a;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);"></span>
-    </div>
-    <div class="rc-gallery-grid" id="galleryGrid">
-      <div class="rc-gallery-item" id="gi0"><div class="placeholder">이미지 추가</div><label class="gallery-upload-btn">📷 업로드<input type="file" accept="image/*" onchange="loadGalleryImg(this,0)"></label></div>
-      <div class="rc-gallery-item" id="gi1"><div class="placeholder">이미지 추가</div><label class="gallery-upload-btn">📷 업로드<input type="file" accept="image/*" onchange="loadGalleryImg(this,1)"></label></div>
-      <div class="rc-gallery-item" id="gi2"><div class="placeholder">이미지 추가</div><label class="gallery-upload-btn">📷 업로드<input type="file" accept="image/*" onchange="loadGalleryImg(this,2)"></label></div>
-      <div class="rc-gallery-item" id="gi3"><div class="placeholder">이미지 추가</div><label class="gallery-upload-btn">📷 업로드<input type="file" accept="image/*" onchange="loadGalleryImg(this,3)"></label></div>
-      <div class="rc-gallery-item" id="gi4"><div class="placeholder">이미지 추가</div><label class="gallery-upload-btn">📷 업로드<input type="file" accept="image/*" onchange="loadGalleryImg(this,4)"></label></div>
-      <div class="rc-gallery-item" id="gi5"><div class="placeholder">이미지 추가</div><label class="gallery-upload-btn">📷 업로드<input type="file" accept="image/*" onchange="loadGalleryImg(this,5)"></label></div>
-    </div>
-    <p class="rc-gallery-caption">
-      <span class="rc-edit-area"><label style="color:#888;">SBS아카데미컴퓨터아트학원 캠퍼스 현장</label><input type="text" value="SBS아카데미컴퓨터아트학원 캠퍼스 현장" style="color:#888;background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.2);"></span>
-    </p>
-  </div>
-
-  <!-- ── 지점 이미지 ── -->
+  <!-- 꿈의 기업 이미지 -->
   <div class="rc-img-wrap">
-    <span class="rc-edit-area swap"><input type="checkbox" name="imgChk" checked></span>
-    <img class="recruit-img" src="/application/recruit/img/keg-recruit-location.jpg" alt="전국지점"
-      onerror="this.parentElement.style.display='none'">
+    <div class="img-chk-wrap"><label><input type="checkbox" name="imgChk" checked> 기업 소개</label></div>
+    <img class="recruit-img" src="/application/recruit/img/keg-recruit-aff.jpg" alt="" onerror="this.style.display='none'">
   </div>
 
-  <!-- ── FIRST BRAND AWARDS ── -->
-  <div class="rc-fba-section">
-    <div class="rc-fba-badge">✦ KOREA EDUCATION GROUP ✦</div>
-    <div class="rc-fba-title">FI<span class="hl">R</span>ST<br>BR<span class="hl">A</span>ND<br>AWARDS</div>
-    <div class="rc-fba-sub">KOREA'S NO.1 EDUCATION BRAND</div>
-  </div>
-
-  <!-- ── 수상 연혁 ── -->
-  <div class="rc-history-section">
-    <div class="rc-history-badge">대한민국 NO.1 교육브랜드</div>
-    <div class="rc-history-main">코리아교육그룹</div>
-    <ul class="rc-history-list">
-      <li><span class="year">2020~2021</span><span class="desc">대한민국 브랜드 No.1 7년 연속 수상 / 소비자 만족 퍼스트 브랜드 대상</span></li>
-      <li><span class="year">2021~2022</span><span class="desc">대한민국 교육브랜드 대상 직업능력교육 부문 수상</span></li>
-      <li><span class="year">2022~2023</span><span class="desc">대한민국 교육브랜드 대상 IT교육 부문 No.1 선정</span></li>
-      <li><span class="year">2023~2024</span><span class="desc">대한민국 교육브랜드 대상 IT교육 부문 2년 연속 수상</span></li>
-      <li><span class="year">2024~2025</span><span class="desc">한국소비자포럼 퍼스트 브랜드 대상 직업교육 부문 대상 수상</span></li>
-      <li><span class="year">2025~2026</span><span class="desc">FIRST BRAND AWARDS 교육서비스 부문 최우수 브랜드 선정</span></li>
-    </ul>
-  </div>
-
-  <!-- ── 교육브랜드 이미지 ── -->
+  <!-- 전국지점 이미지 -->
   <div class="rc-img-wrap">
-    <span class="rc-edit-area swap"><input type="checkbox" name="imgChk" checked></span>
-    <img class="recruit-img" src="/application/recruit/img/keg-recruit-awards.jpg" alt="교육브랜드"
-      onerror="this.parentElement.style.display='none'">
+    <div class="img-chk-wrap"><label><input type="checkbox" name="imgChk" checked> 전국지점</label></div>
+    <img class="recruit-img" src="/application/recruit/img/keg-recruit-location.jpg" alt="" onerror="this.style.display='none'">
+  </div>
+
+  <!-- 교육브랜드 이미지 -->
+  <div class="rc-img-wrap">
+    <div class="img-chk-wrap"><label><input type="checkbox" name="imgChk" checked> 교육브랜드</label></div>
+    <img class="recruit-img" src="/application/recruit/img/keg-recruit-awards.jpg" alt="" onerror="this.style.display='none'">
   </div>
 
 </div><!-- /rcCapture -->
-</section>
 
-<!-- ── 하단 고정 버튼 ── -->
 <div id="fixed-btns">
-  <button type="button" id="get_down" class="btn_download">⬇ 이미지로 저장</button>
-  <button onclick="window.location.reload()" class="btn_refresh">↺ 다시쓰기</button>
+  <button type="button" class="btn_download" id="get_down">⬇ 이미지로 저장</button>
+  <button class="btn_refresh" onclick="location.reload()">↺ 다시쓰기</button>
 </div>
 
 <script>
-/* ── textarea 자동 높이 ── */
-document.querySelectorAll('.rc-edit-area textarea').forEach(function(el) {
-  var offset = el.offsetHeight - el.clientHeight;
-  function resize() { el.style.height = 'auto'; el.style.height = (el.scrollHeight + offset) + 'px'; }
-  el.addEventListener('input', resize);
-  resize();
+/* textarea 자동 높이 */
+function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+document.querySelectorAll('textarea').forEach(function(ta) {
+  ta.addEventListener('input', function() { autoResize(this); });
+  autoResize(ta);
 });
 
-/* ── 이미지 저장 ── */
+/* 이미지 저장 */
 document.getElementById('get_down').addEventListener('click', function() {
-  // 체크 해제된 이미지 숨기기
-  document.querySelectorAll('.rc-edit-area input[name="imgChk"]').forEach(function(chk) {
+  /* 체크 해제 이미지 숨기기 */
+  document.querySelectorAll('input[name="imgChk"]').forEach(function(chk) {
     if (!chk.checked) chk.closest('.rc-img-wrap').classList.add('chk-false');
   });
-
-  // label에 textarea/input 값 반영
+  /* label에 값 반영 */
   document.querySelectorAll('.rc-edit-area').forEach(function(area) {
     var label = area.querySelector('label');
-    var input = area.querySelector('input[type="text"], textarea');
-    if (label && input) {
-      var val = input.value.replace(/\n/g, '<br>');
-      label.innerHTML = val;
-    }
+    var field = area.querySelector('input[type="text"], textarea');
+    if (label && field) label.innerHTML = field.value.replace(/\n/g, '<br>');
   });
-
-  // 편집 UI 숨기기
-  document.querySelectorAll('.rc-edit-area input[type="text"], .rc-edit-area textarea, .add_button, .delete_button, .rc-tool').forEach(function(el) {
-    el.classList.add('swap');
-  });
+  /* 캡처 모드 */
   document.getElementById('rcCapture').classList.add('rc-cap-ok');
 
-  // 캡처
-  html2canvas(document.getElementById('rcCapture'), {
-    scale: 2, useCORS: true, allowTaint: true, logging: false
-  }).then(function(canvas) {
-    var a = document.createElement('a');
-    a.href = canvas.toDataURL('image/jpeg', 0.92);
-    a.download = '채용공고_' + new Date().toISOString().slice(0,10) + '.jpg';
-    a.click();
-
-    // 복원
-    document.getElementById('rcCapture').classList.remove('rc-cap-ok');
-    document.querySelectorAll('.swap').forEach(function(el) { el.classList.remove('swap'); });
-    document.querySelectorAll('.chk-false').forEach(function(el) { el.classList.remove('chk-false'); });
-  });
+  html2canvas(document.getElementById('rcCapture'), { scale: 2, useCORS: true, allowTaint: true, logging: false })
+    .then(function(canvas) {
+      var a = document.createElement('a');
+      a.href = canvas.toDataURL('image/jpeg', 0.92);
+      a.download = '채용공고.jpg';
+      a.click();
+      /* 복원 */
+      document.getElementById('rcCapture').classList.remove('rc-cap-ok');
+      document.querySelectorAll('.chk-false').forEach(function(el) { el.classList.remove('chk-false'); });
+    });
 });
 
-/* ── 행 추가 ── */
+/* 행 추가 */
 document.querySelectorAll('.add_button').forEach(function(btn) {
   btn.addEventListener('click', function() {
-    var tableType = btn.getAttribute('data-table-type');
-    var cellCount = parseInt(btn.getAttribute('data-cell-count'));
-    var tbody = document.querySelector('.tableBodyType' + tableType);
+    var type = btn.dataset.type;
+    var cols = parseInt(btn.dataset.cols);
+    var tbody = document.querySelector('.tableBodyType' + type);
     if (!tbody) return;
-
+    var defaults = [['교육부','교육부'],['- 내용 입력','- 내용 입력'],['- 자격 요건 입력','- 자격 요건 입력']];
     var row = tbody.insertRow();
-    for (var i = 0; i < cellCount; i++) {
+    for (var i = 0; i < cols; i++) {
       var cell = row.insertCell(i);
-      var placeholders = [
-        ['교육부', '교육부'],
-        ['- 내용을 입력하세요', '- 내용을 입력하세요'],
-        ['- 자격 요건을 입력하세요', '- 자격 요건을 입력하세요'],
-      ];
-      var ph = placeholders[i] || ['', ''];
-      cell.innerHTML = '<span class="rc-edit-area">'
-        + '<label>' + ph[0] + '</label>'
-        + '<textarea rows="2">' + ph[1] + '</textarea>'
-        + '</span>';
-
-      // textarea 자동 높이 연결
-      var ta = cell.querySelector('textarea');
-      ta.addEventListener('input', function() { this.style.height='auto'; this.style.height = this.scrollHeight + 'px'; });
+      if (i === 0) cell.style.cssText = 'text-align:center;font-weight:700;background:#f4f7ff;width:110px;';
+      var ph = defaults[i] || ['내용','내용'];
+      var lbl = document.createElement('label');
+      lbl.style.display = 'none';
+      lbl.textContent = ph[0];
+      var ta = document.createElement('textarea');
+      ta.rows = 2; ta.value = ph[1];
+      ta.style.cssText = 'display:block;width:100%;border:1px dashed transparent;background:transparent;font-family:inherit;font-size:13px;resize:none;outline:none;line-height:1.6;padding:1px 3px;';
+      ta.addEventListener('input', function() { autoResize(this); });
+      var span = document.createElement('span');
+      span.className = 'rc-edit-area';
+      span.style.display = 'block';
+      span.appendChild(lbl); span.appendChild(ta);
+      cell.appendChild(span);
+      autoResize(ta);
     }
   });
 });
 
-/* ── 행 삭제 ── */
-function deleteLastRow(tableType) {
-  var tbody = document.querySelector('.tableBodyType' + tableType);
-  if (tbody && tbody.rows.length > 0) {
-    tbody.deleteRow(tbody.rows.length - 1);
-  }
-}
-
-/* ── 갤러리 이미지 업로드 ── */
-function loadGalleryImg(input, idx) {
-  var file = input.files[0];
-  if (!file || !file.type.startsWith('image/')) { alert('이미지 파일만 첨부 가능합니다'); return; }
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var item = document.getElementById('gi' + idx);
-    item.querySelector('.placeholder').style.display = 'none';
-    var existImg = item.querySelector('img.gallery-uploaded');
-    if (existImg) item.removeChild(existImg);
-    var img = document.createElement('img');
-    img.src = e.target.result;
-    img.className = 'gallery-uploaded';
-    img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
-    item.insertBefore(img, item.firstChild);
-  };
-  reader.readAsDataURL(file);
+/* 행 삭제 */
+function deleteRow(type) {
+  var tbody = document.querySelector('.tableBodyType' + type);
+  if (tbody && tbody.rows.length > 0) tbody.deleteRow(tbody.rows.length - 1);
 }
 </script>
 </body>
