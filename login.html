@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>코리아교육그룹 — 채용 안내</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      background: #00152c;
+      font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    }
+    .card {
+      background: #fff; border-radius: 16px;
+      padding: 48px 44px 40px; width: 360px;
+      text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,.4);
+    }
+    .logo { font-size: 12px; color: #888; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+    h1 { font-size: 20px; font-weight: bold; color: #00152c; margin-bottom: 32px; line-height: 1.5; }
+    .field { margin-bottom: 16px; text-align: left; }
+    label { display: block; font-size: 12px; color: #555; font-weight: bold; margin-bottom: 6px; letter-spacing: 0.5px; }
+    input {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid #ddd; border-radius: 8px;
+      font-size: 15px; font-family: inherit;
+      outline: none; transition: border-color .2s;
+    }
+    input:focus { border-color: #00507f; }
+    .err { font-size: 12px; color: #e53935; margin-top: 10px; min-height: 18px; }
+    .btn-primary {
+      margin-top: 20px; width: 100%; padding: 14px;
+      background: #00507f; color: #fff; border: none; border-radius: 8px;
+      font-size: 15px; font-weight: bold; cursor: pointer;
+      transition: background .2s; letter-spacing: 1px;
+    }
+    .btn-primary:hover { background: #003d60; }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+    .divider { margin: 24px 0 16px; border: none; border-top: 1px solid #eee; }
+    .register-link { font-size: 13px; color: #888; }
+    .register-link a { color: #00507f; font-weight: bold; text-decoration: none; }
+    .register-link a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p class="logo">Korea Education Group</p>
+    <h1>채용 안내<br>관계자 전용</h1>
+
+    <div class="field">
+      <label for="name">이름 (아이디)</label>
+      <input type="text" id="name" placeholder="홍길동" autocomplete="username" />
+    </div>
+    <div class="field">
+      <label for="pwd">비밀번호</label>
+      <input type="password" id="pwd" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') login()" />
+    </div>
+    <p class="err" id="err"></p>
+
+    <button class="btn-primary" id="btn" onclick="login()">입장하기</button>
+
+    <hr class="divider" />
+    <p class="register-link">처음이신가요? <a href="/register.html">회원가입</a></p>
+  </div>
+
+  <script>
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    }
+
+    async function login() {
+      const name = document.getElementById('name').value.trim();
+      const pwd  = document.getElementById('pwd').value;
+      const err  = document.getElementById('err');
+      const btn  = document.getElementById('btn');
+
+      if (!name || !pwd) { err.textContent = '이름과 비밀번호를 입력해주세요.'; return; }
+
+      btn.disabled = true; btn.textContent = '확인 중...'; err.textContent = '';
+
+      const hash  = await sha256(pwd);
+      const users = JSON.parse(localStorage.getItem('recruit_users') || '[]');
+      const user  = users.find(u => u.name === name && u.password_hash === hash);
+
+      if (!user) {
+        err.textContent = '이름 또는 비밀번호가 올바르지 않습니다.';
+        btn.disabled = false; btn.textContent = '입장하기';
+        return;
+      }
+
+      const sessionData = { id: user.id, name: user.name, branch: user.branch, expiresAt: Date.now() + 30 * 60 * 1000 };
+      localStorage.setItem('recruit_session', JSON.stringify(sessionData));
+      window.location.replace('/index.html');
+    }
+
+    if (localStorage.getItem('recruit_session')) {
+      window.location.replace('/index.html');
+    }
+  </script>
+</body>
+</html>
